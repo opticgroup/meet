@@ -1,10 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 * {
   box-sizing: border-box;
 }
 
+:root {
+  /* TalkGroup.ai Dark Theme with Bright Yellow Accent */
+  --tg-bg-primary: #0a0a0a;
+  --tg-bg-secondary: #111111;
+  --tg-bg-tertiary: #1a1a1a;
+  --tg-text-primary: #ffffff;
+  --tg-text-secondary: rgba(255, 255, 255, 0.6);
+  --tg-text-muted: rgba(255, 255, 255, 0.4);
+  --tg-accent-primary: #FFD400;
+  --tg-accent-secondary: #FFC107;
+  --tg-accent-hover: #FFE55C;
+  --tg-border-primary: rgba(255, 212, 0, 0.2);
+  --tg-border-secondary: rgba(255, 255, 255, 0.15);
+}
+
 html {
   color-scheme: dark;
-  background-color: #111;
+  background-color: var(--tg-bg-primary);
 }
 
 html,
@@ -18,6 +37,8 @@ body {
 body {
   display: flex;
   flex-direction: column;
+  background-color: var(--tg-bg-primary);
+  color: var(--tg-text-primary);
 }
 
 .header {
@@ -38,28 +59,29 @@ body {
   font-size: 1.25rem;
   line-height: 144%;
   text-align: center;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--tg-text-secondary);
 }
 
 footer {
   width: 100%;
   padding: 1.5rem 2rem;
   text-align: center;
-  color: rgba(255, 255, 255, 0.6);
-  background-color: var(--lk-bg);
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--tg-text-secondary);
+  background-color: var(--tg-bg-secondary);
+  border-top: 1px solid var(--tg-border-secondary);
 }
 
 footer a,
 h2 a {
-  color: #ff6352;
-  text-decoration-color: #a33529;
+  color: var(--tg-accent-primary);
+  text-decoration-color: var(--tg-accent-secondary);
   text-underline-offset: 0.125em;
 }
 
 footer a:hover,
-h2 a {
-  text-decoration-color: #ff6352;
+h2 a:hover {
+  color: var(--tg-accent-hover);
+  text-decoration-color: var(--tg-accent-hover);
 }
 
 h2 a {

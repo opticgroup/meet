@@ -1,26 +1,10 @@
-<a href="https://livekit.io/">
-  <img src="./.github/assets/livekit-mark.png" alt="LiveKit logo" width="100" height="100">
-</a>
+# TalkGroup.ai
 
-# LiveKit Meet
+**Mission Critical Communications**
 
-<p>
-  <a href="https://meet.livekit.io"><strong>Try the demo</strong></a>
-  •
-  <a href="https://github.com/livekit/components-js">LiveKit Components</a>
-  •
-  <a href="https://docs.livekit.io/">LiveKit Docs</a>
-  •
-  <a href="https://livekit.io/cloud">LiveKit Cloud</a>
-  •
-  <a href="https://blog.livekit.io/">Blog</a>
-</p>
+TalkGroup.ai is a modern communications platform for mission-critical teams built on [LiveKit Components](https://github.com/livekit/components-js), [LiveKit Cloud](https://cloud.livekit.io/), and Next.js. 
 
-<br>
-
-LiveKit Meet is an open source video conferencing app built on [LiveKit Components](https://github.com/livekit/components-js), [LiveKit Cloud](https://cloud.livekit.io/), and Next.js. It's been completely redesigned from the ground up using our new components library.
-
-![LiveKit Meet screenshot](./.github/assets/livekit-meet.jpg)
+TalkGroup.ai blends open-mic voice, video, and push-to-talk — built for speed, clarity, and control.
 
 ## Tech Stack
 
