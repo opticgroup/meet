@@ -13,7 +13,7 @@ TalkGroup.ai blends open-mic voice, video, and push-to-talk — built for speed,
 
 ## Demo
 
-Give it a try at https://meet.livekit.io.
+Give it a try at https://talkgroup.ai.
 
 ## Dev Setup
 

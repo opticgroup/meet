@@ -178,15 +178,11 @@ export default function Page() {
         </Suspense>
       </main>
       <footer data-lk-theme="default">
-        Hosted on{' '}
-        <a href="https://livekit.io/cloud?ref=meet" rel="noopener">
-          LiveKit Cloud
+        Powered by{' '}
+        <a href="https://livekit.io/cloud" rel="noopener">
+          LiveKit
         </a>
-        . Source code on{' '}
-        <a href="https://github.com/livekit/meet?ref=meet" rel="noopener">
-          GitHub
-        </a>
-        .
+        . Built for Mission Critical Teams.
       </footer>
     </>
   );
