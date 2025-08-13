@@ -1,0 +1,31 @@
+{
+  "name": "talkgroup-ai",
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "env": {
+    "LIVEKIT_API_KEY": "@livekit-api-key",
+    "LIVEKIT_API_SECRET": "@livekit-api-secret",
+    "LIVEKIT_URL": "@livekit-url",
+    "NEXT_PUBLIC_SHOW_SETTINGS_MENU": "true"
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin"
+        },
+        {
+          "key": "Cross-Origin-Embedder-Policy",
+          "value": "credentialless"
+        }
+      ]
+    }
+  ]
+}
