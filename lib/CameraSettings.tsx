@@ -8,13 +8,11 @@ import {
 } from '@livekit/components-react';
 import { BackgroundBlur, VirtualBackground } from '@livekit/track-processors';
 import { isLocalTrack, LocalTrackPublication, Track } from 'livekit-client';
-import Desk from '../public/background-images/samantha-gades-BlIhVfXbi9s-unsplash.jpg';
-import Nature from '../public/background-images/ali-kazal-tbw_KQE3Cbg-unsplash.jpg';
-
-// Background image paths
-const BACKGROUND_IMAGES = [
-  { name: 'Desk', path: Desk },
-  { name: 'Nature', path: Nature },
+// Background image paths - disabled for now
+const BACKGROUND_IMAGES: Array<{ name: string; path: { src: string } }> = [
+  // Commented out due to Git LFS images not available
+  // { name: 'Desk', path: Desk },
+  // { name: 'Nature', path: Nature },
 ];
 
 // Background options
