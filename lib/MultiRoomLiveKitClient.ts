@@ -103,7 +103,7 @@ export class MultiRoomLiveKitClient {
     });
 
     // Speaking detection
-    room.on(RoomEvent.ActiveSpeakersChanged, (speakers: RemoteParticipant[]) => {
+    room.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
       const isSpeaking = speakers.length > 0;
       
       // Notify ducking engine
@@ -126,7 +126,7 @@ export class MultiRoomLiveKitClient {
     });
 
     // Connection quality
-    room.on(RoomEvent.ConnectionQualityChanged, (quality: ConnectionQuality, participant?: RemoteParticipant) => {
+    room.on(RoomEvent.ConnectionQualityChanged, (quality: ConnectionQuality, participant) => {
       if (!participant) { // Local participant
         console.log(`📊 Connection quality for ${roomInfo.talkgroupName}:`, quality);
       }
@@ -158,7 +158,7 @@ export class MultiRoomLiveKitClient {
     // Get the audio element
     const audioElement = track.attach() as HTMLAudioElement;
     audioElement.autoplay = true;
-    audioElement.playsInline = true;
+    // playsInline is for video elements, not needed for audio
     
     // Connect to ducking engine
     if (this.duckingEngine) {
@@ -170,7 +170,7 @@ export class MultiRoomLiveKitClient {
     document.body.appendChild(audioElement);
     
     // Clean up when track ends
-    track.on(Track.Events.Ended, () => {
+    track.on('ended', () => {
       audioElement.remove();
     });
   }

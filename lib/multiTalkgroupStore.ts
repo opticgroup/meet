@@ -317,24 +317,7 @@ export const useMultiTalkgroupStore = create<MultiTalkgroupState>()(
           masterVolume: state.masterVolume,
           isDuckingEnabled: state.isDuckingEnabled,
         }),
-        // Custom serializer for Map objects
-        serialize: (state) => JSON.stringify({
-          ...state,
-          talkgroups: Array.from(state.talkgroups.entries()),
-          activeSpeakers: Array.from(state.activeSpeakers),
-        }),
-        deserialize: (str) => {
-          const parsed = JSON.parse(str);
-          return {
-            ...parsed,
-            talkgroups: new Map(parsed.talkgroups || []),
-            activeSpeakers: new Set(parsed.activeSpeakers || []),
-          };
-        },
       }
-    ),
-    {
-      name: 'multi-talkgroup-store',
-    }
+    )
   )
 );

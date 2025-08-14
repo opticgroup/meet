@@ -201,7 +201,7 @@ export default function TalkGroupsPage() {
             fontSize: '0.875rem',
             color: '#6b7280',
           }}>
-            <p><strong>You'll be connected to:</strong></p>
+            <p><strong>You&apos;ll be connected to:</strong></p>
             <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
               <li>🚨 911-EMERGENCY (Priority)</li>
               <li>🔥 FIRE-DISPATCH (Secondary)</li>
