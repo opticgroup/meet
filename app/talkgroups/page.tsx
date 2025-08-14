@@ -40,7 +40,7 @@ export default function TalkGroupsPage() {
   } = useMultiTalkgroupStore();
 
   // Default talkgroups to join
-  const DEFAULT_TALKGROUPS = [1, 2, 4]; // Emergency, Fire Dispatch, Tactical-1
+  const DEFAULT_TALKGROUPS = [1, 2, 3]; // 911, General, R&D
 
   const handleConnect = useCallback(async () => {
     if (!participantName.trim()) {
@@ -203,9 +203,9 @@ export default function TalkGroupsPage() {
           }}>
             <p><strong>You&apos;ll be connected to:</strong></p>
             <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
-              <li>🚨 911-EMERGENCY (Priority)</li>
-              <li>🔥 FIRE-DISPATCH (Secondary)</li>
-              <li>💬 TACTICAL-1 (Dynamic)</li>
+              <li>🚨 911 (Emergency Priority)</li>
+              <li>📞 General (Static Secondary - 2min TTL)</li>
+              <li>🔬 R&D (Dynamic)</li>
             </ul>
           </div>
         </div>

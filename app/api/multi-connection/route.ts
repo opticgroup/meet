@@ -168,51 +168,33 @@ function getRoomNameForTalkgroup(talkgroup: TalkgroupData): string {
  */
 async function fetchTalkgroupsData(talkgroupIds: number[]): Promise<TalkgroupData[]> {
   // This is a mock implementation - replace with actual database calls
-  // For now, generate mock data based on the talkgroup priorities system
+  // Default talkgroups for talkgroup.ai
   
   const mockTalkgroups: TalkgroupData[] = [
     {
       id: 1,
-      name: '911-EMERGENCY',
+      name: '911',
       type: 'static-priority',
       priority: 100,
-      holdTimeSeconds: 0,
+      holdTimeSeconds: 0, // No hold time - always plays audio to all members
       canTransmit: true,
       isActive: true,
     },
     {
       id: 2,
-      name: 'FIRE-DISPATCH',
+      name: 'General',
       type: 'static-secondary',
       priority: 80,
-      holdTimeSeconds: 2,
+      holdTimeSeconds: 120, // 2 minute default TTL timer
       canTransmit: true,
       isActive: true,
     },
     {
       id: 3,
-      name: 'POLICE-DISPATCH',
-      type: 'static-secondary',
-      priority: 80,
-      holdTimeSeconds: 2,
-      canTransmit: true,
-      isActive: true,
-    },
-    {
-      id: 4,
-      name: 'TACTICAL-1',
+      name: 'R&D',
       type: 'dynamic',
       priority: 50,
-      holdTimeSeconds: 3,
-      canTransmit: true,
-      isActive: true,
-    },
-    {
-      id: 5,
-      name: 'INCIDENT-2024-001',
-      type: 'adhoc',
-      priority: 40,
-      holdTimeSeconds: 3,
+      holdTimeSeconds: 0, // Only locked if people are actively talking
       canTransmit: true,
       isActive: true,
     },
