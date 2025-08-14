@@ -112,6 +112,9 @@ export default function Page() {
           LiveKit Cloud
         </a>
         . Built for Mission Critical Teams.
+        <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', opacity: 0.6 }}>
+          v2.0.0 • {new Date().toISOString().split('T')[0]}
+        </div>
       </footer>
     </>
   );
