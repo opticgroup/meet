@@ -119,8 +119,17 @@ pnpm install
 
 **Problem**: Cannot connect to LiveKit server
 
+**Common Error**: `WebSocket connection to 'wss://v0-demo-jaley50g.livekit.cloud/rtc?access_token=...' failed`
+
 **Diagnostic Steps**:
-1. **Verify WebSocket URL is reachable**:
+1. **Check for newline characters in environment variables**:
+   ```bash
+   # Test the connection-details API response
+   curl -s "https://your-domain.com/api/connection-details?roomName=test&participantName=test"
+   ```
+   Look for `\n` characters in the serverUrl field.
+
+2. **Verify WebSocket URL is reachable**:
    ```bash
    # Test WebSocket connectivity (if wscat is installed)
    wscat -c wss://your-project.livekit.cloud
@@ -129,9 +138,17 @@ pnpm install
    curl -I https://your-project.livekit.cloud
    ```
 
-2. **Check URL format**: Must be `wss://` protocol for secure WebSocket connection
+3. **Check URL format**: Must be `wss://` protocol for secure WebSocket connection
 
 **Solution**:
+- **Fix newline characters**: Use `printf` instead of `echo` when setting environment variables:
+  ```bash
+  # WRONG (adds newline)
+  echo "wss://your-project.livekit.cloud" | vercel env add LIVEKIT_URL production
+  
+  # CORRECT (no newline)
+  printf "wss://your-project.livekit.cloud" | vercel env add LIVEKIT_URL production
+  ```
 - Ensure `LIVEKIT_URL` uses correct format: `wss://your-project.livekit.cloud`
 - Verify the LiveKit server is running and accessible
 - Check firewall/network restrictions
