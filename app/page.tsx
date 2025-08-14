@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { generateRoomId } from '@/lib/client-utils';
 import styles from '../styles/Home.module.css';
 
+// Force deployment refresh - v2
+
 export default function Page() {
   const router = useRouter();
   
