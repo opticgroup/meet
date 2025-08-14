@@ -176,6 +176,20 @@ export default function Page() {
             <CustomConnectionTab label="Custom" />
           </Tabs>
         </Suspense>
+        
+        {/* New Multi-Talkgroup Link */}
+        <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '12px' }}>
+          <h3 style={{ margin: '0 0 1rem 0', color: '#FFD400' }}>🚀 NEW: Multi-Talkgroup System</h3>
+          <p style={{ margin: '0 0 1rem 0', opacity: 0.8 }}>Experience DMR-style priority-based audio ducking with simultaneous talkgroup connections.</p>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <a href="/talkgroups" className="lk-button" style={{ textDecoration: 'none' }}>
+              📻 Launch Multi-TalkGroups
+            </a>
+            <a href="/multi-test" className="lk-button" style={{ textDecoration: 'none', background: 'rgba(255, 255, 255, 0.2)' }}>
+              🧪 Test Interface
+            </a>
+          </div>
+        </div>
       </main>
       <footer data-lk-theme="default">
         Powered by{' '}
