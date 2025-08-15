@@ -300,7 +300,7 @@ export default function MultiTalkgroupTest() {
           fontSize: '0.75rem', 
           color: '#6b7280'
         }}>
-          v0.2.0 • {new Date().toISOString().split('T')[0]}
+          v0.2.1 • 2025-08-15
         </div>
       </div>
     </main>

@@ -113,7 +113,7 @@ export default function Page() {
         </a>
         . Built for Mission Critical Teams.
         <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', opacity: 0.6 }}>
-          v2.0.0 • {new Date().toISOString().split('T')[0]}
+          v0.2.1 • 2025-08-15
         </div>
       </footer>
     </>

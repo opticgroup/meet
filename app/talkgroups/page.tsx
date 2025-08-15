@@ -388,7 +388,7 @@ export default function TalkGroupsPage() {
               fontWeight: 'bold'
             }}>📻 TalkGroup.ai</h1>
             <div style={{ fontSize: '0.625rem', color: THEME_COLORS.textMuted, marginTop: '2px' }}>
-              v0.2.0 • {new Date().toISOString().split('T')[0]}
+              v0.2.1 • 2025-08-15
             </div>
           </div>
           <div style={{ fontSize: '0.875rem', color: THEME_COLORS.textSecondary }}>

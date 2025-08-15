@@ -105,7 +105,7 @@ export function VideoConferenceClientImpl(props: {
           userSelect: 'none',
           fontFamily: 'monospace'
         }}>
-          v0.2.0 • {new Date().toISOString().split('T')[0]}
+          v0.2.1 • 2025-08-15
         </div>
       </RoomContext.Provider>
     </div>
