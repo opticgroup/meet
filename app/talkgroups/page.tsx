@@ -207,9 +207,9 @@ export default function TalkGroupsPage() {
       const rooms = clientRef.current.getAllRooms();
       rooms.forEach((room) => {
         const connection = talkgroups.get(room.name);
-        if (connection && connection.isJoined) {
-          // Add local participant
-          if (room.localParticipant) {
+        if (connection) {
+          // Add local participant (always show if connected to room)
+          if (room.localParticipant && room.state === 'connected') {
             participants.push({
               participant: room.localParticipant,
               roomName: room.name,
@@ -217,14 +217,16 @@ export default function TalkGroupsPage() {
             });
           }
           
-          // Add remote participants
-          room.remoteParticipants.forEach((participant) => {
-            participants.push({
-              participant,
-              roomName: room.name,
-              talkgroupName: connection.room.talkgroupName
+          // Add remote participants (always show if connected to room)
+          if (room.state === 'connected') {
+            room.remoteParticipants.forEach((participant) => {
+              participants.push({
+                participant,
+                roomName: room.name,
+                talkgroupName: connection.room.talkgroupName
+              });
             });
-          });
+          }
         }
       });
     }
@@ -378,12 +380,17 @@ export default function TalkGroupsPage() {
         minHeight: '60px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <h1 style={{ 
-            margin: 0, 
-            fontSize: '1.25rem', 
-            color: THEME_COLORS.accent,
-            fontWeight: 'bold'
-          }}>📻 TalkGroup.ai</h1>
+          <div>
+            <h1 style={{ 
+              margin: 0, 
+              fontSize: '1.25rem', 
+              color: THEME_COLORS.accent,
+              fontWeight: 'bold'
+            }}>📻 TalkGroup.ai</h1>
+            <div style={{ fontSize: '0.625rem', color: THEME_COLORS.textMuted, marginTop: '2px' }}>
+              v0.2.0 • {new Date().toISOString().split('T')[0]}
+            </div>
+          </div>
           <div style={{ fontSize: '0.875rem', color: THEME_COLORS.textSecondary }}>
             {participantName} • <span style={{ color: THEME_COLORS.success }}>●</span> Connected
           </div>

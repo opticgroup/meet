@@ -217,7 +217,7 @@ function VideoConferenceComponent(props: {
   }, [lowPowerMode]);
 
   return (
-    <div className="lk-room-container">
+    <div className="lk-room-container" style={{ position: 'relative' }}>
       <RoomContext.Provider value={room}>
         <KeyboardShortcuts />
         <VideoConference
@@ -226,6 +226,23 @@ function VideoConferenceComponent(props: {
         />
         <DebugMode />
         <RecordingIndicator />
+        
+        {/* Version overlay */}
+        <div style={{
+          position: 'absolute',
+          bottom: '10px',
+          right: '10px',
+          fontSize: '0.75rem',
+          color: 'rgba(255, 255, 255, 0.7)',
+          background: 'rgba(0, 0, 0, 0.5)',
+          padding: '4px 8px',
+          borderRadius: '4px',
+          pointerEvents: 'none',
+          userSelect: 'none',
+          fontFamily: 'monospace'
+        }}>
+          v0.2.0 • {new Date().toISOString().split('T')[0]}
+        </div>
       </RoomContext.Provider>
     </div>
   );

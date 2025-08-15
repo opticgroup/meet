@@ -180,11 +180,33 @@ export class MultiRoomLiveKitClient {
    */
   async joinRoom(roomId: string): Promise<void> {
     const room = this.rooms.get(roomId);
-    if (room && room.state === 'connected') {
-      // Enable microphone for this room
-      await room.localParticipant.setMicrophoneEnabled(true);
+    if (!room) {
+      console.error(`❌ Room ${roomId} not found`);
+      return;
+    }
+    
+    if (room.state !== 'connected') {
+      console.error(`❌ Room ${roomId} is not connected (state: ${room.state})`);
+      return;
+    }
+    
+    try {
+      // Update store first to reflect UI state
       this.store.joinTalkgroup(roomId);
+      
+      // Enable microphone for this room (but don't require it to succeed)
+      try {
+        await room.localParticipant.setMicrophoneEnabled(true);
+        console.log(`🎤 Microphone enabled for ${roomId}`);
+      } catch (micError) {
+        console.warn(`⚠️ Could not enable microphone for ${roomId}:`, micError);
+        // Continue anyway - user can still listen
+      }
+      
       console.log(`📞 Joined talkgroup room: ${roomId}`);
+    } catch (error) {
+      console.error(`❌ Error joining room ${roomId}:`, error);
+      throw error;
     }
   }
 
