@@ -85,15 +85,18 @@ export const useMultiTalkgroupStore = create<MultiTalkgroupState>()(
 
           // Create talkgroup connections from rooms
           connectionDetails.rooms.forEach(room => {
+            const shouldAutoJoin = get().autoJoinStatic && room.type.startsWith('static');
             const connection: TalkgroupConnection = {
               room,
-              isJoined: get().autoJoinStatic && room.type.startsWith('static'),
+              isJoined: shouldAutoJoin,
               isMuted: false,
               volume: get().defaultVolume,
               isActiveSpeaker: false,
             };
             talkgroupsMap.set(room.roomName, connection);
             priorityOrder.push(room.roomName);
+            
+            console.log(`🔧 Setup talkgroup ${room.talkgroupName} (${room.type}): autoJoin=${shouldAutoJoin}, roomName=${room.roomName}`);
           });
 
           // Sort by priority (highest first)
@@ -134,10 +137,14 @@ export const useMultiTalkgroupStore = create<MultiTalkgroupState>()(
           const connection = talkgroups.get(roomId);
           
           if (connection) {
+            console.log(`🔧 Store: Joining talkgroup ${connection.room.talkgroupName} (${roomId})`);
             connection.isJoined = true;
             talkgroups.set(roomId, connection);
             set({ talkgroups });
             console.log('📞 Joined talkgroup:', connection.room.talkgroupName);
+          } else {
+            console.error(`❌ Store: Talkgroup ${roomId} not found in store`);
+            console.log('Available talkgroups:', Array.from(get().talkgroups.keys()));
           }
         },
 
