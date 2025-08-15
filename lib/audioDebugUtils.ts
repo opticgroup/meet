@@ -59,7 +59,7 @@ export function getAudioElementsInfo(): AudioElementInfo[] {
     networkState: audio.networkState,
     autoplay: audio.autoplay,
     controls: audio.controls,
-    dataset: { ...audio.dataset },
+    dataset: Object.fromEntries(Object.entries(audio.dataset).filter(([_, value]) => value !== undefined)) as Record<string, string>,
   }));
 }
 
