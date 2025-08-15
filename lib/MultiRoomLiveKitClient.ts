@@ -7,6 +7,7 @@ import {
   Track,
   AudioTrack,
   ConnectionQuality,
+  ConnectionState,
 } from 'livekit-client';
 import { MultiConnectionDetails, TalkgroupRoom } from './types';
 import { DMRAudioDuckingEngine, SpeakerEvent } from './AudioDuckingEngine';
@@ -132,6 +133,20 @@ export class MultiRoomLiveKitClient {
       }
     });
 
+    // DataChannel error handling
+    room.on(RoomEvent.DataReceived, (payload, participant, kind) => {
+      console.log(`📨 Data received from ${roomInfo.talkgroupName}:`, { participant: participant?.identity, kind, payload });
+    });
+
+    // Connection state changed
+    room.on(RoomEvent.ConnectionStateChanged, (state) => {
+      console.log(`🔗 Connection state changed for ${roomInfo.talkgroupName}:`, state);
+      // Log connection issues for debugging
+      if (state !== ConnectionState.Connected) {
+        console.warn(`⚠️ Connection state issue for ${roomInfo.talkgroupName}: ${state}`);
+      }
+    });
+
     // Disconnected
     room.on(RoomEvent.Disconnected, (reason) => {
       console.log(`🔌 Disconnected from ${roomInfo.talkgroupName}:`, reason);
@@ -146,6 +161,20 @@ export class MultiRoomLiveKitClient {
     // Reconnected
     room.on(RoomEvent.Reconnected, () => {
       console.log(`✅ Reconnected to ${roomInfo.talkgroupName}`);
+    });
+
+    // Media devices error
+    room.on(RoomEvent.MediaDevicesError, (error) => {
+      console.error(`📱 Media devices error for ${roomInfo.talkgroupName}:`, error);
+    });
+
+    // Participant permissions changed (might help with transmission issues)
+    room.on(RoomEvent.LocalTrackPublished, (publication, participant) => {
+      console.log(`📤 Local track published for ${roomInfo.talkgroupName}:`, { kind: publication.kind, participant: participant.identity });
+    });
+
+    room.on(RoomEvent.LocalTrackUnpublished, (publication, participant) => {
+      console.log(`📤 Local track unpublished for ${roomInfo.talkgroupName}:`, { kind: publication.kind, participant: participant.identity });
     });
   }
 
@@ -248,8 +277,23 @@ export class MultiRoomLiveKitClient {
    */
   async setPushToTalk(roomId: string, enabled: boolean): Promise<void> {
     const room = this.rooms.get(roomId);
-    if (room) {
+    if (!room) {
+      console.error(`❌ Room ${roomId} not found for push-to-talk`);
+      return;
+    }
+    
+    if (room.state !== 'connected') {
+      console.error(`❌ Room ${roomId} not connected (state: ${room.state}) - cannot set push-to-talk`);
+      return;
+    }
+    
+    try {
+      console.log(`🎙️ ${enabled ? 'Enabling' : 'Disabling'} microphone for room ${roomId}`);
       await room.localParticipant.setMicrophoneEnabled(enabled);
+      console.log(`✅ Microphone ${enabled ? 'enabled' : 'disabled'} for room ${roomId}`);
+    } catch (error) {
+      console.error(`❌ Failed to ${enabled ? 'enable' : 'disable'} microphone for room ${roomId}:`, error);
+      throw error;
     }
   }
 

@@ -175,17 +175,49 @@ export default function TalkGroupsPage() {
   }, []);
 
   // DMR Transmission Logic - selects talkgroup for transmission
-  const handleTransmitRoomChange = useCallback((roomId: string) => {
-    setSelectedTransmitRoom(roomId);
-    if (clientRef.current) {
-      // Enable microphone only for selected room, disable for others
-      const currentTalkgroups = Array.from(talkgroups.values());
-      currentTalkgroups.forEach(async (connection) => {
-        const shouldEnableMic = connection.room.roomName === roomId && connection.isJoined;
-        await clientRef.current?.setPushToTalk(connection.room.roomName, shouldEnableMic);
-      });
+  const handleTransmitRoomChange = useCallback(async (roomId: string) => {
+    console.log(`📡 Attempting to select transmit room: ${roomId}`);
+    
+    // Check if the selected room is joined
+    const selectedConnection = talkgroups.get(roomId);
+    if (!selectedConnection || !selectedConnection.isJoined) {
+      console.error(`❌ Cannot select ${roomId} for transmission - room not joined`);
+      return;
     }
-    console.log(`📡 DMR Transmit Room Selected: ${roomId}`);
+    
+    setSelectedTransmitRoom(roomId);
+    
+    if (!clientRef.current) {
+      console.error(`❌ No client reference available`);
+      return;
+    }
+    
+    try {
+      console.log(`🎙️ Setting up transmission for room: ${roomId}`);
+      
+      // First disable microphone for all rooms
+      const currentTalkgroups = Array.from(talkgroups.values());
+      const disablePromises = currentTalkgroups
+        .filter(connection => connection.isJoined && connection.room.roomName !== roomId)
+        .map(async (connection) => {
+          console.log(`🔇 Disabling microphone for: ${connection.room.roomName}`);
+          try {
+            await clientRef.current?.setPushToTalk(connection.room.roomName, false);
+          } catch (error) {
+            console.warn(`⚠️ Failed to disable mic for ${connection.room.roomName}:`, error);
+          }
+        });
+      
+      await Promise.all(disablePromises);
+      
+      // Then enable microphone for selected room
+      console.log(`🎤 Enabling microphone for selected room: ${roomId}`);
+      await clientRef.current.setPushToTalk(roomId, true);
+      
+      console.log(`✅ DMR Transmit Room Selected: ${roomId}`);
+    } catch (error) {
+      console.error(`❌ Error setting up transmission for ${roomId}:`, error);
+    }
   }, [talkgroups]);
 
   // Handle talkgroup card click for transmission selection (DMR behavior)
@@ -710,6 +742,33 @@ export default function TalkGroupsPage() {
             }}>
               🔇 Audio Ducking
             </label>
+          </div>
+        </div>
+
+        {/* Helper Text */}
+        <div style={{
+          textAlign: 'center',
+          marginBottom: '1rem',
+          padding: '1rem',
+          background: `${THEME_COLORS.accent}15`,
+          border: `1px solid ${THEME_COLORS.accent}60`,
+          borderRadius: '8px',
+          maxWidth: '600px',
+          margin: '0 auto 1rem auto'
+        }}>
+          <div style={{
+            fontSize: '1rem',
+            color: THEME_COLORS.textPrimary,
+            fontWeight: '600',
+            marginBottom: '0.5rem'
+          }}>
+            📻 Click to select which talkgroup to transmit over
+          </div>
+          <div style={{
+            fontSize: '0.875rem',
+            color: THEME_COLORS.textSecondary
+          }}>
+            1. JOIN a talkgroup to start listening • 2. CLICK the talkgroup card to select for transmission
           </div>
         </div>
 
