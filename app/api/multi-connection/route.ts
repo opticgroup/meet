@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
     // Build room data for client
     const rooms: TalkgroupRoom[] = talkgroupsData.map(talkgroup => {
       const roomName = getRoomNameForTalkgroup(talkgroup);
-      logger.log(LogLevel.DEBUG, 'Building room data', {
+      logger.log(LogLevel.INFO, 'Building room data for client', {
         talkgroupId: talkgroup.id,
         talkgroupName: talkgroup.name,
         roomName,
@@ -220,6 +220,9 @@ async function createMultiRoomToken(
   const token = new AccessToken(API_KEY, API_SECRET, userInfo);
   token.ttl = '10m'; // Longer TTL for multi-room connections
 
+  console.log('🔑 Creating multi-room token for user:', userInfo.identity);
+  console.log('🔑 Talkgroups to create grants for:', talkgroups.map(tg => ({ id: tg.id, name: tg.name, canTransmit: tg.canTransmit })));
+  
   // Add a grant for each talkgroup room
   talkgroups.forEach(talkgroup => {
     const roomName = getRoomNameForTalkgroup(talkgroup);
@@ -231,8 +234,18 @@ async function createMultiRoomToken(
       canSubscribe: true,
     };
     token.addGrant(grant);
+    
+    console.log(`🔑 Added room grant:`, {
+      roomName,
+      talkgroupName: talkgroup.name,
+      roomJoin: grant.roomJoin,
+      canPublish: grant.canPublish,
+      canPublishData: grant.canPublishData,
+      canSubscribe: grant.canSubscribe
+    });
   });
 
+  console.log('🔑 Total grants added:', talkgroups.length);
   return await token.toJwt();
 }
 

@@ -307,19 +307,39 @@ export class MultiRoomLiveKitClient {
     console.log(`🔍 Debug: Available rooms:`, Array.from(this.rooms.keys()));
     console.log(`🔍 Debug: Room map size:`, this.rooms.size);
     
+    // Wait a moment for room connections to settle
+    if (this.rooms.size === 0) {
+      console.log('⏳ No rooms in map yet, waiting 1 second for connections to complete...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
     const room = this.rooms.get(roomId);
     if (!room) {
-      console.error(`❌ Room ${roomId} not found in rooms map`);
+      console.error(`❌ Room ${roomId} not found in rooms map after wait`);
       console.error(`❌ Available rooms are:`, Array.from(this.rooms.keys()));
       console.error(`❌ Connection details:`, this.connectionDetails?.rooms.map(r => ({
         roomName: r.roomName,
         talkgroupName: r.talkgroupName,
         type: r.type
       })));
+      
+      // Try to find a room with a similar name (case-insensitive)
+      const availableRooms = Array.from(this.rooms.keys());
+      const similarRoom = availableRooms.find(roomName => 
+        roomName.toLowerCase() === roomId.toLowerCase()
+      );
+      
+      if (similarRoom) {
+        console.log(`🔄 Found similar room name: "${similarRoom}" vs requested "${roomId}"`);
+        console.log('💡 Using similar room instead...');
+        return this.joinRoom(similarRoom);
+      }
+      
       throw new Error(`Room ${roomId} not found`);
     }
     
     console.log(`🔍 Debug: Found room, current state: ${room.state}`);
+    console.log(`🔍 Debug: Room name from LiveKit: "${room.name}"`);
     
     if (room.state !== 'connected') {
       console.error(`❌ Room ${roomId} is not connected (state: ${room.state})`);
