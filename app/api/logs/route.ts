@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { serverLogger, LogLevel, LogEntry } from '@/lib/serverLogger';
 
 export async function GET(request: NextRequest) {
+  console.log('🔍 Logs API endpoint called:', request.url);
   const { searchParams } = new URL(request.url);
   const category = searchParams.get('category');
   const level = searchParams.get('level') as LogLevel;
   const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50;
   const stream = searchParams.get('stream') === 'true';
+  
+  console.log('📊 Logs API params:', { category, level, limit, stream });
 
   try {
     if (stream) {
