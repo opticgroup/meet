@@ -60,29 +60,75 @@ export class MultiRoomLiveKitClient {
   }
 
   /**
-   * Connect to individual talkgroup room
+   * Connect to individual talkgroup room with retry logic
    */
   private async connectToRoom(roomInfo: TalkgroupRoom, token: string, serverUrl: string): Promise<void> {
-    const room = new Room({
-      adaptiveStream: true,
-      dynacast: true,
-      audioCaptureDefaults: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-    });
+    const maxRetries = 3;
+    let retryCount = 0;
+    
+    while (retryCount < maxRetries) {
+      try {
+        console.log(`🔗 Attempting to connect to ${roomInfo.talkgroupName} (attempt ${retryCount + 1}/${maxRetries})`);
+        
+        const room = new Room({
+          adaptiveStream: true,
+          dynacast: true,
+          audioCaptureDefaults: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+          // Add connection timeout and retry options
+          reconnectPolicy: {
+            nextRetryDelayInMs: (context) => {
+              const delay = Math.min(1000 * Math.pow(2, context.retryCount), 10000);
+              console.log(`⏱️ Next retry for ${roomInfo.talkgroupName} in ${delay}ms`);
+              return delay;
+            },
+            maxReconnectAttempts: 5,
+          },
+        });
 
-    // Set up room event handlers
-    this.setupRoomEventHandlers(room, roomInfo);
-    
-    // Connect to room
-    await room.connect(serverUrl, token);
-    
-    // Store room reference
-    this.rooms.set(roomInfo.roomName, room);
-    
-    console.log(`📞 Connected to room: ${roomInfo.talkgroupName} (${roomInfo.type})`);
+        // Set up room event handlers first
+        this.setupRoomEventHandlers(room, roomInfo);
+        
+        // Add pre-connection error handling
+        const connectPromise = room.connect(serverUrl, token);
+        
+        // Set a reasonable timeout for connection
+        const timeoutPromise = new Promise<void>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error(`Connection timeout after 15 seconds for ${roomInfo.talkgroupName}`));
+          }, 15000);
+        });
+        
+        await Promise.race([connectPromise, timeoutPromise]);
+        
+        // Verify connection state
+        if (room.state !== 'connected') {
+          throw new Error(`Room connection failed - state: ${room.state}`);
+        }
+        
+        // Store room reference
+        this.rooms.set(roomInfo.roomName, room);
+        
+        console.log(`✅ Successfully connected to room: ${roomInfo.talkgroupName} (${roomInfo.type})`);
+        return; // Success, exit retry loop
+        
+      } catch (error) {
+        console.error(`❌ Connection attempt ${retryCount + 1} failed for ${roomInfo.talkgroupName}:`, error);
+        retryCount++;
+        
+        if (retryCount < maxRetries) {
+          const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+          console.log(`⏳ Retrying connection to ${roomInfo.talkgroupName} in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          console.error(`💥 Failed to connect to ${roomInfo.talkgroupName} after ${maxRetries} attempts`);
+          throw error;
+        }
+      }
+    }
   }
 
   /**
@@ -183,25 +229,57 @@ export class MultiRoomLiveKitClient {
    */
   private handleIncomingAudioTrack(track: AudioTrack, roomInfo: TalkgroupRoom, participant: RemoteParticipant): void {
     console.log(`🔊 Audio track subscribed from ${roomInfo.talkgroupName}:`, participant.identity);
+    console.log('🎵 Track details:', {
+      kind: track.kind,
+      enabled: track.enabled,
+      muted: track.muted,
+      mediaStreamTrack: track.mediaStreamTrack?.id,
+      readyState: track.mediaStreamTrack?.readyState
+    });
     
     // Get the audio element
     const audioElement = track.attach() as HTMLAudioElement;
     audioElement.autoplay = true;
-    // playsInline is for video elements, not needed for audio
+    audioElement.volume = 1.0; // Ensure full volume
+    audioElement.muted = false; // Ensure not muted
+    
+    console.log('🎧 Audio element created:', {
+      volume: audioElement.volume,
+      muted: audioElement.muted,
+      autoplay: audioElement.autoplay,
+      srcObject: !!audioElement.srcObject
+    });
+    
+    // Add event listeners for debugging
+    audioElement.addEventListener('loadstart', () => console.log(`🎵 Audio loading started for ${participant.identity}`));
+    audioElement.addEventListener('canplay', () => console.log(`🎵 Audio can play for ${participant.identity}`));
+    audioElement.addEventListener('playing', () => console.log(`🎵 Audio playing for ${participant.identity}`));
+    audioElement.addEventListener('error', (e) => console.error(`❌ Audio error for ${participant.identity}:`, e));
+    audioElement.addEventListener('stalled', () => console.warn(`⚠️ Audio stalled for ${participant.identity}`));
     
     // Connect to ducking engine
     if (this.duckingEngine) {
+      console.log(`🔀 Connecting audio to ducking engine for ${roomInfo.talkgroupName}`);
       this.duckingEngine.connectRoomAudio(roomInfo.roomName, audioElement);
     }
     
     // Add to DOM (hidden)
     audioElement.style.display = 'none';
+    audioElement.setAttribute('data-room', roomInfo.roomName);
+    audioElement.setAttribute('data-participant', participant.identity);
     document.body.appendChild(audioElement);
+    
+    console.log(`🎯 Audio element added to DOM for ${roomInfo.talkgroupName}/${participant.identity}`);
     
     // Clean up when track ends
     track.on('ended', () => {
+      console.log(`🔚 Audio track ended for ${participant.identity}`);
       audioElement.remove();
     });
+    
+    // Log audio elements count
+    const totalAudioElements = document.querySelectorAll('audio').length;
+    console.log(`📊 Total audio elements in DOM: ${totalAudioElements}`);
   }
 
   /**

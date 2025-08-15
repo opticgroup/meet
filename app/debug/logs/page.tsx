@@ -1,6 +1,22 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
+
+// Client-only component wrapper to prevent hydration issues
+const ClientOnly = ({ children }: { children: React.ReactNode }) => {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return null;
+  }
+
+  return <>{children}</>;
+};
 
 interface LogEntry {
   timestamp: string;
@@ -144,8 +160,9 @@ export default function LogsPage() {
   const levels = Array.from(new Set(logs.map(log => log.level)));
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6">
-      <div className="max-w-7xl mx-auto">
+    <ClientOnly>
+      <div className="min-h-screen bg-gray-900 text-white p-6">
+        <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -290,7 +307,8 @@ export default function LogsPage() {
             </div>
           )}
         </div>
+        </div>
       </div>
-    </div>
+    </ClientOnly>
   );
 }

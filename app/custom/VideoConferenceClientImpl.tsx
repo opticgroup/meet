@@ -68,16 +68,74 @@ export function VideoConferenceClientImpl(props: {
 
   useEffect(() => {
     if (e2eeSetupComplete) {
-      room.connect(props.liveKitUrl, props.token, connectOptions).catch((error) => {
-        console.error(error);
-      });
-      room.localParticipant.enableCameraAndMicrophone().catch((error) => {
-        console.error(error);
-      });
+      console.log('🔗 Attempting to connect to LiveKit room...');
+      
+      // Add connection timeout
+      const connectWithTimeout = Promise.race([
+        room.connect(props.liveKitUrl, props.token, connectOptions),
+        new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Connection timeout after 15 seconds')), 15000);
+        })
+      ]);
+      
+      connectWithTimeout
+        .then(() => {
+          console.log('✅ Successfully connected to LiveKit room');
+          
+          // Try to enable camera and microphone, but don't fail if it doesn't work
+          room.localParticipant.enableCameraAndMicrophone().catch((error) => {
+            console.warn('⚠️ Could not enable camera/microphone:', error);
+            // Try just microphone
+            return room.localParticipant.setMicrophoneEnabled(true).catch((micError) => {
+              console.warn('⚠️ Could not enable microphone only:', micError);
+            });
+          });
+        })
+        .catch((error) => {
+          console.error('❌ Failed to connect to LiveKit room:', error);
+          
+          // Try reconnecting after a delay
+          setTimeout(() => {
+            console.log('🔄 Retrying connection...');
+            room.connect(props.liveKitUrl, props.token, connectOptions).catch((retryError) => {
+              console.error('❌ Retry connection failed:', retryError);
+            });
+          }, 3000);
+        });
     }
   }, [room, props.liveKitUrl, props.token, connectOptions, e2eeSetupComplete]);
 
   useLowCPUOptimizer(room);
+
+  useEffect(() => {
+    if (!room) return;
+    
+    console.log('🔊 Listening to audio track state changes');
+
+    const handleTrackSubscribed = (track: any) => {
+      if (track.kind === 'audio') {
+        console.log(`🎵 Audio track subscribed: id=${track.sid}, enabled=${track.isEnabled}`);
+        track.on('enabled', () => console.log(`🔊 Audio track enabled: id=${track.sid}`));
+        track.on('disabled', () => console.log(`🔇 Audio track disabled: id=${track.sid}`));
+        track.on('started', () => console.log(`▶️ Audio track started: id=${track.sid}`));
+        track.on('stopped', () => console.log(`⏹️ Audio track stopped: id=${track.sid}`));
+      }
+    };
+
+    const handleTrackUnsubscribed = (track: any) => {
+      if (track.kind === 'audio') {
+        console.log(`🔇 Audio track unsubscribed: id=${track.sid}`);
+      }
+    };
+
+    room.on('trackSubscribed', handleTrackSubscribed);
+    room.on('trackUnsubscribed', handleTrackUnsubscribed);
+
+    return () => {
+      room.off('trackSubscribed', handleTrackSubscribed);
+      room.off('trackUnsubscribed', handleTrackUnsubscribed);
+    };
+  }, [room]);
 
   return (
     <div className="lk-room-container" style={{ position: 'relative' }}>
