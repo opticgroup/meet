@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { generateRoomId } from '@/lib/client-utils';
 import styles from '../styles/Home.module.css';
 
-// Force deployment refresh - v2
+// Force deployment refresh - v3 - Debug Logging Deploy
 
 export default function Page() {
   const router = useRouter();
@@ -113,7 +113,7 @@ export default function Page() {
         </a>
         . Built for Mission Critical Teams.
         <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', opacity: 0.6 }}>
-          v0.2.1 • 2025-08-15
+          v0.2.1 • 2025-08-15 • Debug Logging Available
         </div>
       </footer>
     </>
