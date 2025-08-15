@@ -230,7 +230,6 @@ export class MultiRoomLiveKitClient {
     console.log(`🔊 Audio track subscribed from ${roomInfo.talkgroupName}:`, participant.identity);
     console.log('🎵 Track details:', {
       kind: track.kind,
-      enabled: track.enabled,
       muted: track.muted,
       mediaStreamTrack: track.mediaStreamTrack?.id,
       readyState: track.mediaStreamTrack?.readyState
