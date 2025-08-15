@@ -66,9 +66,17 @@ export class MultiRoomLiveKitClient {
     const maxRetries = 3;
     let retryCount = 0;
     
+    console.log(`🔍 Debug: connectToRoom called for:`, {
+      roomName: roomInfo.roomName,
+      talkgroupName: roomInfo.talkgroupName,
+      talkgroupId: roomInfo.talkgroupId,
+      type: roomInfo.type,
+      priority: roomInfo.priority
+    });
+    
     while (retryCount < maxRetries) {
       try {
-        console.log(`🔗 Attempting to connect to ${roomInfo.talkgroupName} (attempt ${retryCount + 1}/${maxRetries})`);
+        console.log(`🔗 Attempting to connect to ${roomInfo.talkgroupName} (room: "${roomInfo.roomName}") (attempt ${retryCount + 1}/${maxRetries})`);
         
         const room = new Room({
           adaptiveStream: true,
@@ -91,6 +99,12 @@ export class MultiRoomLiveKitClient {
         // Set up room event handlers first
         this.setupRoomEventHandlers(room, roomInfo);
         
+        console.log(`🔍 Debug: About to connect to LiveKit with:`, {
+          serverUrl,
+          roomName: roomInfo.roomName,
+          hasToken: !!token
+        });
+        
         // Add pre-connection error handling
         const connectPromise = room.connect(serverUrl, token);
         
@@ -108,10 +122,15 @@ export class MultiRoomLiveKitClient {
           throw new Error(`Room connection failed - state: ${room.state}`);
         }
         
+        console.log(`🔍 Debug: Room connected successfully, storing with key: "${roomInfo.roomName}"`);
+        console.log(`🔍 Debug: Actual room.name from LiveKit: "${room.name}"`);
+        
         // Store room reference
         this.rooms.set(roomInfo.roomName, room);
         
         console.log(`✅ Successfully connected to room: ${roomInfo.talkgroupName} (${roomInfo.type})`);
+        console.log(`🔍 Debug: Rooms map now contains:`, Array.from(this.rooms.keys()));
+        
         return; // Success, exit retry loop
         
       } catch (error) {
@@ -284,23 +303,43 @@ export class MultiRoomLiveKitClient {
    * Join a specific talkgroup room
    */
   async joinRoom(roomId: string): Promise<void> {
+    console.log(`🔍 Debug: joinRoom called with roomId: "${roomId}"`);
+    console.log(`🔍 Debug: Available rooms:`, Array.from(this.rooms.keys()));
+    console.log(`🔍 Debug: Room map size:`, this.rooms.size);
+    
     const room = this.rooms.get(roomId);
     if (!room) {
-      console.error(`❌ Room ${roomId} not found`);
-      return;
+      console.error(`❌ Room ${roomId} not found in rooms map`);
+      console.error(`❌ Available rooms are:`, Array.from(this.rooms.keys()));
+      console.error(`❌ Connection details:`, this.connectionDetails?.rooms.map(r => ({
+        roomName: r.roomName,
+        talkgroupName: r.talkgroupName,
+        type: r.type
+      })));
+      throw new Error(`Room ${roomId} not found`);
     }
+    
+    console.log(`🔍 Debug: Found room, current state: ${room.state}`);
     
     if (room.state !== 'connected') {
       console.error(`❌ Room ${roomId} is not connected (state: ${room.state})`);
-      return;
+      console.error(`❌ Room details:`, {
+        name: room.name,
+        state: room.state,
+        numParticipants: room.numParticipants,
+        localParticipant: room.localParticipant?.identity
+      });
+      throw new Error(`Room ${roomId} is not connected - state: ${room.state}`);
     }
     
     try {
+      console.log(`🔍 Debug: Updating store for room: ${roomId}`);
       // Update store first to reflect UI state
       this.store.joinTalkgroup(roomId);
       
       // Enable microphone for this room (but don't require it to succeed)
       try {
+        console.log(`🔍 Debug: Attempting to enable microphone for: ${roomId}`);
         await room.localParticipant.setMicrophoneEnabled(true);
         console.log(`🎤 Microphone enabled for ${roomId}`);
       } catch (micError) {
@@ -308,7 +347,7 @@ export class MultiRoomLiveKitClient {
         // Continue anyway - user can still listen
       }
       
-      console.log(`📞 Joined talkgroup room: ${roomId}`);
+      console.log(`📞 Successfully joined talkgroup room: ${roomId}`);
     } catch (error) {
       console.error(`❌ Error joining room ${roomId}:`, error);
       throw error;

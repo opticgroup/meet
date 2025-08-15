@@ -80,6 +80,17 @@ export const useMultiTalkgroupStore = create<MultiTalkgroupState>()(
 
         // Connection Actions
         connect: (connectionDetails: MultiConnectionDetails) => {
+          console.log('🔍 Debug: Store connect called with:', connectionDetails.rooms.length, 'rooms');
+          connectionDetails.rooms.forEach((room, index) => {
+            console.log(`🔍 Debug: Room ${index}:`, {
+              roomName: room.roomName,
+              talkgroupName: room.talkgroupName,
+              talkgroupId: room.talkgroupId,
+              type: room.type,
+              priority: room.priority
+            });
+          });
+          
           const talkgroupsMap = new Map<string, TalkgroupConnection>();
           const priorityOrder: string[] = [];
 
@@ -96,8 +107,10 @@ export const useMultiTalkgroupStore = create<MultiTalkgroupState>()(
             talkgroupsMap.set(room.roomName, connection);
             priorityOrder.push(room.roomName);
             
-            console.log(`🔧 Setup talkgroup ${room.talkgroupName} (${room.type}): autoJoin=${shouldAutoJoin}, roomName=${room.roomName}`);
+            console.log(`🔧 Setup talkgroup ${room.talkgroupName} (${room.type}): autoJoin=${shouldAutoJoin}, roomName="${room.roomName}"`);
           });
+
+          console.log('🔍 Debug: Final talkgroupsMap keys:', Array.from(talkgroupsMap.keys()));
 
           // Sort by priority (highest first)
           priorityOrder.sort((a, b) => {
@@ -115,6 +128,7 @@ export const useMultiTalkgroupStore = create<MultiTalkgroupState>()(
           });
 
           console.log('🔗 Connected to multi-talkgroup system:', connectionDetails.rooms.length, 'rooms');
+          console.log('🔍 Debug: Store talkgroups map contains:', Array.from(get().talkgroups.keys()));
         },
 
         disconnect: () => {
