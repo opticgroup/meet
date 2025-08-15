@@ -85,7 +85,6 @@ export class MultiRoomLiveKitClient {
               console.log(`⏱️ Next retry for ${roomInfo.talkgroupName} in ${delay}ms`);
               return delay;
             },
-            maxReconnectAttempts: 5,
           },
         });
 
