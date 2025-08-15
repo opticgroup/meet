@@ -189,12 +189,22 @@ export default function TalkGroupsPage() {
   }, [talkgroups]);
 
   // Handle talkgroup card click for transmission selection (DMR behavior)
-  const handleTalkgroupCardClick = useCallback((roomId: string) => {
+  const handleTalkgroupCardClick = useCallback((event: React.MouseEvent, roomId: string) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
     const connection = talkgroups.get(roomId);
-    if (!connection || !connection.isJoined) {
-      console.log(`⚠️ Cannot transmit on ${roomId} - not joined to this talkgroup`);
+    if (!connection) {
+      console.log(`⚠️ Talkgroup ${roomId} not found`);
       return;
     }
+    
+    if (!connection.isJoined) {
+      console.log(`⚠️ Cannot transmit on ${connection.room.talkgroupName} - not joined to this talkgroup. Click JOIN first.`);
+      return;
+    }
+    
+    console.log(`📡 Selecting ${connection.room.talkgroupName} for transmission`);
     
     // Select this talkgroup for transmission
     handleTransmitRoomChange(roomId);
@@ -225,18 +235,10 @@ export default function TalkGroupsPage() {
   const getAllParticipants = useCallback(() => {
     const participants: Array<{ participant: RemoteParticipant | LocalParticipant; roomName: string; talkgroupName: string }> = [];
     
-    // Debug logging
-    console.log('🔍 Debugging getAllParticipants:');
-    console.log('- clientRef.current:', !!clientRef.current);
-    console.log('- talkgroups size:', talkgroups.size);
-    console.log('- isConnected:', isConnected);
-    
     if (clientRef.current) {
       const rooms = clientRef.current.getAllRooms();
-      console.log('- rooms count:', rooms.size);
       
-      rooms.forEach((room, roomName) => {
-        console.log(`- room ${roomName}: state=${room.state}, localParticipant=${!!room.localParticipant}`);
+      rooms.forEach((room) => {
         const connection = talkgroups.get(room.name);
         if (connection) {
           // Add local participant (always show if connected to room)
@@ -246,7 +248,6 @@ export default function TalkGroupsPage() {
               roomName: room.name,
               talkgroupName: connection.room.talkgroupName
             });
-            console.log(`✅ Added local participant for ${connection.room.talkgroupName}`);
           }
           
           // Add remote participants (always show if connected to room)
@@ -257,16 +258,12 @@ export default function TalkGroupsPage() {
                 roomName: room.name,
                 talkgroupName: connection.room.talkgroupName
               });
-              console.log(`✅ Added remote participant ${participant.identity} for ${connection.room.talkgroupName}`);
             });
           }
-        } else {
-          console.log(`❌ No connection found for room ${room.name}`);
         }
       });
     }
     
-    console.log(`📊 Total participants found: ${participants.length}`);
     return participants;
   }, [talkgroups, isConnected]);
 
@@ -621,7 +618,7 @@ export default function TalkGroupsPage() {
         padding: '1.5rem 2rem',
         borderTop: `2px solid ${THEME_COLORS.borderColor}`
       }}>
-        {/* Microphone Transmission Controls */}
+        {/* Microphone Transmission Instructions */}
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
@@ -670,37 +667,24 @@ export default function TalkGroupsPage() {
             </button>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <select 
-                value={selectedTransmitRoom}
-                onChange={(e) => handleTransmitRoomChange(e.target.value)}
-                style={{ 
-                  padding: '0.75rem 1rem', 
-                  borderRadius: '8px', 
-                  border: `2px solid ${THEME_COLORS.borderColor}`,
-                  background: THEME_COLORS.cardBackground,
-                  color: THEME_COLORS.textPrimary,
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  minWidth: '200px',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="">Select Talkgroup to Transmit...</option>
-                {talkgroupsList.filter(c => c.isJoined).map(connection => (
-                  <option key={connection.room.roomName} value={connection.room.roomName}>
-                    🎙️ {connection.room.talkgroupName} ({connection.room.type.replace('-', ' ')})
-                  </option>
-                ))}
-              </select>
+              <div style={{ 
+                fontSize: '1rem', 
+                color: THEME_COLORS.textPrimary,
+                fontWeight: '600'
+              }}>
+                {selectedConnection 
+                  ? `Transmitting on ${selectedConnection.room.talkgroupName}`
+                  : 'Click a talkgroup below to select for transmission'}
+              </div>
               
               <div style={{ 
                 fontSize: '0.75rem', 
                 color: selectedConnection ? PRIORITY_COLORS[selectedConnection.room.type as keyof typeof PRIORITY_COLORS] : THEME_COLORS.textMuted,
-                fontWeight: '600'
+                fontWeight: '400'
               }}>
                 {selectedConnection 
-                  ? `Ready to transmit on ${selectedConnection.room.talkgroupName}`
-                  : 'Select a talkgroup to enable microphone'}
+                  ? `${selectedConnection.room.type.replace('-', ' ').toUpperCase()} • Priority ${selectedConnection.room.priority}`
+                  : '1. JOIN a talkgroup, then 2. CLICK to select for transmission'}
               </div>
             </div>
           </div>
@@ -747,7 +731,7 @@ export default function TalkGroupsPage() {
             return (
               <div
                 key={roomId}
-                onClick={() => handleTalkgroupCardClick(roomId)}
+                onClick={(event) => handleTalkgroupCardClick(event, roomId)}
                 style={{
                   minWidth: '220px',
                   maxWidth: '280px',
@@ -810,7 +794,11 @@ export default function TalkGroupsPage() {
                 {/* Controls */}
                 <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
                   <button
-                    onClick={() => isJoined ? handleLeaveRoom(roomId) : handleJoinRoom(roomId)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      isJoined ? handleLeaveRoom(roomId) : handleJoinRoom(roomId);
+                    }}
                     style={{ 
                       flex: 1,
                       padding: '0.5rem',
@@ -828,7 +816,11 @@ export default function TalkGroupsPage() {
                   </button>
                   
                   <button
-                    onClick={() => handleToggleMute(roomId)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleToggleMute(roomId);
+                    }}
                     disabled={!isJoined}
                     style={{ 
                       padding: '0.5rem 0.75rem',
@@ -847,7 +839,11 @@ export default function TalkGroupsPage() {
                   
                   {room.type === 'static-priority' && (
                     <button
-                      onClick={() => handleEmergencyOverride(roomId)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleEmergencyOverride(roomId);
+                      }}
                       style={{ 
                         padding: '0.5rem 0.75rem',
                         background: THEME_COLORS.danger,
@@ -874,7 +870,10 @@ export default function TalkGroupsPage() {
                       max="1"
                       step="0.1"
                       value={volume}
-                      onChange={(e) => handleVolumeChange(roomId, parseFloat(e.target.value))}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        handleVolumeChange(roomId, parseFloat(e.target.value));
+                      }}
                       style={{ 
                         flex: 1, 
                         height: '6px',
