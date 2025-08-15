@@ -161,7 +161,7 @@ export class DMRAudioDuckingEngine {
   }
 
   /**
-   * Calculate target gain level for a room based on active speakers
+   * Calculate target gain level for a room based on active speakers and DMR rules
    */
   private calculateTargetGain(
     room: TalkgroupRoom,
@@ -177,21 +177,48 @@ export class DMRAudioDuckingEngine {
       return this.getUserVolume(room.roomName);
     }
 
-    // Apply DMR ducking rules based on room type and active speaker priority
-    const roomPriorityConfig = TALKGROUP_PRIORITIES[room.type];
+    // DMR ROUTING RULES:
     
-    // Check if this room type should be ducked by the active speaker type
-    if (roomPriorityConfig.duckingBehavior.duckedBy.includes(highestPriorityType)) {
-      const duckLevel = TALKGROUP_PRIORITIES[highestPriorityType].duckingBehavior.duckLevel;
-      return duckLevel * this.getUserVolume(room.roomName);
+    // 1. 911 (Emergency/Static-Priority) - ALWAYS heard by everyone, overrides all mute settings
+    if (highestPriorityType === 'static-priority') {
+      // Emergency channel is speaking - everyone hears it regardless of mute settings
+      if (room.type === 'static-priority') {
+        // This is the emergency channel itself speaking
+        return 1.0; // Full volume, ignore user mute settings
+      } else {
+        // Non-emergency channels are completely ducked during emergency transmission
+        return 0.0;
+      }
     }
 
-    // For static-priority rooms (911/emergency), never duck them
-    if (room.type === 'static-priority') {
+    // 2. General (Static-Secondary) - heard by joined users unless they're active elsewhere  
+    if (highestPriorityType === 'static-secondary') {
+      if (room.type === 'static-secondary') {
+        // This is the General channel speaking
+        return this.getUserVolume(room.roomName);
+      } else if (room.type === 'dynamic' || room.type === 'adhoc') {
+        // Dynamic/Adhoc channels are ducked when General is active
+        return 0.1 * this.getUserVolume(room.roomName); // 10% volume
+      }
       return this.getUserVolume(room.roomName);
     }
 
-    // Default: maintain current volume if not explicitly ducked
+    // 3. R&D (Dynamic) - only heard by R&D members, doesn't affect other channels
+    if (highestPriorityType === 'dynamic') {
+      if (room.type === 'dynamic') {
+        // This is the R&D channel - only R&D members hear it
+        return this.getUserVolume(room.roomName);
+      }
+      // Other channels continue at normal volume when R&D is active
+      return this.getUserVolume(room.roomName);
+    }
+
+    // 4. Emergency channels (911) are NEVER ducked or muted
+    if (room.type === 'static-priority') {
+      return Math.max(this.getUserVolume(room.roomName), 0.8); // Minimum 80% volume for emergency
+    }
+
+    // Default: maintain current user volume setting
     return this.getUserVolume(room.roomName);
   }
 
@@ -327,25 +354,46 @@ export class DMRAudioDuckingEngine {
   }
 
   /**
-   * Emergency override - immediately duck all other audio
+   * Emergency override - DMR-style emergency preemption
+   * 911 channel overrides ALL other audio and ignores mute settings
    */
   emergencyOverride(roomId: string): void {
-    console.log(`🚨 EMERGENCY OVERRIDE for room: ${roomId}`);
+    const room = this.roomData.get(roomId);
+    console.log(`🚨 DMR EMERGENCY OVERRIDE activated for: ${room?.talkgroupName || roomId}`);
     
-    // Immediately set all other rooms to minimum volume
+    if (room?.type !== 'static-priority') {
+      console.warn('⚠️ Emergency override called on non-emergency channel:', roomId);
+      return;
+    }
+
+    // IMMEDIATE emergency preemption - override all user settings
     this.state.gainNodes.forEach((gainNode, otherRoomId) => {
       if (otherRoomId !== roomId) {
+        // Completely silence all other channels during emergency
         gainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
         gainNode.gain.setValueAtTime(0.0, this.audioContext.currentTime);
+        
+        const otherRoom = this.roomData.get(otherRoomId);
+        console.log(`🔇 Emergency ducking: ${otherRoom?.talkgroupName || otherRoomId} silenced`);
       }
     });
 
-    // Ensure emergency room is at full volume
+    // Emergency channel at FULL volume - ignores user mute settings
     const emergencyGain = this.state.gainNodes.get(roomId);
     if (emergencyGain) {
       emergencyGain.gain.cancelScheduledValues(this.audioContext.currentTime);
-      emergencyGain.gain.setValueAtTime(1.0, this.audioContext.currentTime);
+      emergencyGain.gain.setValueAtTime(1.0, this.audioContext.currentTime); // Full volume regardless of user settings
+      
+      console.log(`📢 Emergency channel ${room.talkgroupName} at FULL VOLUME (overriding user settings)`);
     }
+
+    // Create an artificial speaker event to maintain emergency state
+    this.onSpeakerEvent({
+      roomId,
+      participantId: 'emergency-override',
+      isSpeaking: true,
+      timestamp: Date.now()
+    });
   }
 
   /**

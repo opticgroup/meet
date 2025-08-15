@@ -174,6 +174,7 @@ export default function TalkGroupsPage() {
     }
   }, []);
 
+  // DMR Transmission Logic - selects talkgroup for transmission
   const handleTransmitRoomChange = useCallback((roomId: string) => {
     setSelectedTransmitRoom(roomId);
     if (clientRef.current) {
@@ -184,8 +185,29 @@ export default function TalkGroupsPage() {
         await clientRef.current?.setPushToTalk(connection.room.roomName, shouldEnableMic);
       });
     }
-    console.log(`📡 Transmitting to: ${roomId}`);
+    console.log(`📡 DMR Transmit Room Selected: ${roomId}`);
   }, [talkgroups]);
+
+  // Handle talkgroup card click for transmission selection (DMR behavior)
+  const handleTalkgroupCardClick = useCallback((roomId: string) => {
+    const connection = talkgroups.get(roomId);
+    if (!connection || !connection.isJoined) {
+      console.log(`⚠️ Cannot transmit on ${roomId} - not joined to this talkgroup`);
+      return;
+    }
+    
+    // Select this talkgroup for transmission
+    handleTransmitRoomChange(roomId);
+    
+    // For emergency channels (911), implement override behavior
+    if (connection.room.type === 'static-priority') {
+      console.log(`🚨 Emergency transmission selected on ${connection.room.talkgroupName}`);
+      // Emergency channels override all mute settings and are heard by everyone
+      if (clientRef.current) {
+        clientRef.current.emergencyOverride(roomId);
+      }
+    }
+  }, [talkgroups, handleTransmitRoomChange]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -203,9 +225,18 @@ export default function TalkGroupsPage() {
   const getAllParticipants = useCallback(() => {
     const participants: Array<{ participant: RemoteParticipant | LocalParticipant; roomName: string; talkgroupName: string }> = [];
     
+    // Debug logging
+    console.log('🔍 Debugging getAllParticipants:');
+    console.log('- clientRef.current:', !!clientRef.current);
+    console.log('- talkgroups size:', talkgroups.size);
+    console.log('- isConnected:', isConnected);
+    
     if (clientRef.current) {
       const rooms = clientRef.current.getAllRooms();
-      rooms.forEach((room) => {
+      console.log('- rooms count:', rooms.size);
+      
+      rooms.forEach((room, roomName) => {
+        console.log(`- room ${roomName}: state=${room.state}, localParticipant=${!!room.localParticipant}`);
         const connection = talkgroups.get(room.name);
         if (connection) {
           // Add local participant (always show if connected to room)
@@ -215,6 +246,7 @@ export default function TalkGroupsPage() {
               roomName: room.name,
               talkgroupName: connection.room.talkgroupName
             });
+            console.log(`✅ Added local participant for ${connection.room.talkgroupName}`);
           }
           
           // Add remote participants (always show if connected to room)
@@ -225,14 +257,18 @@ export default function TalkGroupsPage() {
                 roomName: room.name,
                 talkgroupName: connection.room.talkgroupName
               });
+              console.log(`✅ Added remote participant ${participant.identity} for ${connection.room.talkgroupName}`);
             });
           }
+        } else {
+          console.log(`❌ No connection found for room ${room.name}`);
         }
       });
     }
     
+    console.log(`📊 Total participants found: ${participants.length}`);
     return participants;
-  }, [talkgroups]);
+  }, [talkgroups, isConnected]);
 
   if (!isConnected) {
     return (
@@ -711,6 +747,7 @@ export default function TalkGroupsPage() {
             return (
               <div
                 key={roomId}
+                onClick={() => handleTalkgroupCardClick(roomId)}
                 style={{
                   minWidth: '220px',
                   maxWidth: '280px',
@@ -727,7 +764,9 @@ export default function TalkGroupsPage() {
                       ? `${priorityColor}20` 
                       : THEME_COLORS.cardBackground,
                   transition: 'all 0.3s ease',
-                  boxShadow: isSelected ? `0 0 20px ${THEME_COLORS.accent}40` : 'none'
+                  boxShadow: isSelected ? `0 0 20px ${THEME_COLORS.accent}40` : 'none',
+                  cursor: isJoined ? 'pointer' : 'not-allowed',
+                  opacity: isJoined ? 1 : 0.7
                 }}
               >
                 {/* Talkgroup Header */}
